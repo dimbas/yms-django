@@ -1,0 +1,24 @@
+<table class="table table-striped table-bordered table-condensed">
+    <tbody>
+        {% for product in products %}
+            <tr class="product-short-details">
+                <td class="product-thumbnail" width="10%">
+                    <a href="{% url 'detail' product.id %}">
+                        <img src="{{ product.image.thumb }}" class="img-thumbnail">
+                    </a>
+                </td>
+                <td class="product-title" width="15%">
+                    <a href="{% url 'detail' product.id %}">
+                        {{ product.title }}
+                    </a>
+                </td>
+                <td class="product-short-description">
+                    {{ product.description | safe }}
+                </td>
+                <td class="product-price" width="15%">
+                    {{ product.price }} уе.
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

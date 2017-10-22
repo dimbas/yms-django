@@ -1,0 +1,17 @@
+.product-short-description {
+    text-indent: 15px;
+    font-size: medium;
+}
+.product-description-head {
+    font-size: medium;
+    font-weight: 700;
+    /*line-height: 18px;*/
+}
+.product-title {
+    font-size: x-large;
+    font-weight: 900;
+}
+.product-price {
+    font-size: large;
+    margin-top: 20px;
+}

@@ -1,0 +1,17 @@
+build/
+dist/
+eggs/
+.eggs/
+lib/
+lib64/
+sdist/
+wheels/
+
+.env
+.venv
+env/
+venv/
+
+db.sqlite3
+
+.idea

@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+    <h4>List of Products</h4>
+    {% if products.object_list %}
+        {% include '_products.html' %}
+    {% else %}
+        There no products!
+    {% endif %}
+
+{% if products.has_next or products.has_previous %}
+    {% include '_paginator.html' with page=products only %}
+{% endif %}
+{% endblock %}
