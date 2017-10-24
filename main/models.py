@@ -1,13 +1,37 @@
 import os
 import hashlib
-import datetime
 import io
 
 from django.db import models
 from django.core import validators
+from django.utils import timezone
 from django.db.models import deletion
 
 from simple_market import settings
+
+
+class Product(models.Model):
+    created_at = models.DateTimeField(default=timezone.now, editable=False)
+    updated_at = models.DateTimeField(default=timezone.now, editable=False)
+
+    title = models.CharField(max_length=80, null=False)
+    price = models.FloatField(null=False,
+                              validators=[validators.MinValueValidator(0)],
+                              help_text='Product price.')
+    description = models.TextField(null=False,
+                                   help_text='Description, formatted with markdown.')
+    is_published = models.BooleanField(default=False)
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        self.updated_at = timezone.now()
+        super().save(force_insert, force_update, using, update_fields)
+
+    @property
+    def main_image(self):
+        return self.image_set.get(primary_image=True)
+
+    def __str__(self):
+        return self.title
 
 
 def generate_image_name(instance: 'Image', fname):
@@ -37,12 +61,15 @@ class ImageQuerrySet(models.QuerySet):
 class Image(models.Model):
     objects = ImageQuerrySet.as_manager()
 
-    uploaded_at = models.DateTimeField(default=datetime.datetime.utcnow, editable=False)
+    uploaded_at = models.DateTimeField(default=timezone.now, editable=False)
     full_image = models.ImageField(upload_to=generate_image_name,
                                    validators=[validators.FileExtensionValidator(['jpg', 'png'])],
                                    help_text='Choose image to upload.')
     title = models.CharField(max_length=80, null=True, blank=True,
                              help_text='(Optional) Image title to show.')
+
+    product = models.ForeignKey(Product, on_delete=deletion.CASCADE)
+    primary_image = models.BooleanField(default=False)
 
     @property
     def thumb_name(self):
@@ -104,27 +131,3 @@ class Image(models.Model):
 
     def __str__(self):
         return self.title or self.full_image.name
-
-
-class Product(models.Model):
-    created_at = models.DateTimeField(default=datetime.datetime.utcnow, editable=False)
-    updated_at = models.DateTimeField(default=datetime.datetime.utcnow, editable=False)
-
-    title = models.CharField(max_length=80, null=False)
-    price = models.FloatField(null=False,
-                              validators=[validators.MinValueValidator(0)],
-                              help_text='Product price.')
-    description = models.TextField(null=False,
-                                   help_text='Description, formatted with markdown.')
-
-    image = models.OneToOneField(Image,
-                                 help_text='Choose one of uploaded images',
-                                 on_delete=deletion.DO_NOTHING,
-                                 null=True)
-
-    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
-        self.updated_at = datetime.datetime.utcnow()
-        super().save(force_insert, force_update, using, update_fields)
-
-    def __str__(self):
-        return self.title

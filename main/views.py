@@ -8,7 +8,7 @@ from .models import Product
 
 # Create your views here.
 def products(request: HttpRequest):
-    all_products = Product.objects.order_by('pk').all()
+    all_products = Product.objects.filter(is_published=True).order_by('pk').all()
     paginator = Paginator(all_products, settings.ITEMS_PER_PAGE)
 
     page_index = request.GET.get('page')
