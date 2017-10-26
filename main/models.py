@@ -6,8 +6,8 @@ from django.db import models
 from django.core import validators
 from django.utils import timezone
 from django.db.models import deletion
-
-from simple_market import settings
+from django.conf import settings
+from django.core.files.images import ImageFile
 
 
 class Product(models.Model):
@@ -28,6 +28,11 @@ class Product(models.Model):
 
     @property
     def main_image(self):
+        if not self.image_set.count():
+            return Image.get_or_create_from_path(
+                os.path.join(settings.STATIC_ROOT, 'main', 'img', 'no-product-image.png'),
+                'no-product-image-placeholder'
+            )
         return self.image_set.get(primary_image=True)
 
     def __str__(self):
@@ -57,7 +62,6 @@ class ImageQuerrySet(models.QuerySet):
         return super().delete()
 
 
-# Create your models here.
 class Image(models.Model):
     objects = ImageQuerrySet.as_manager()
 
@@ -65,11 +69,12 @@ class Image(models.Model):
     full_image = models.ImageField(upload_to=generate_image_name,
                                    validators=[validators.FileExtensionValidator(['jpg', 'png'])],
                                    help_text='Choose image to upload.')
-    title = models.CharField(max_length=80, null=True, blank=True,
+    title = models.CharField(max_length=80, null=True, blank=True, unique=True,
                              help_text='(Optional) Image title to show.')
 
-    product = models.ForeignKey(Product, on_delete=deletion.CASCADE)
+    product = models.ForeignKey(Product, on_delete=deletion.CASCADE, null=True)
     primary_image = models.BooleanField(default=False)
+    is_placeholder = models.BooleanField(default=False)
 
     @property
     def thumb_name(self):
@@ -102,6 +107,9 @@ class Image(models.Model):
         return super().delete(using, keep_parents)
 
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        if self.product and self.is_placeholder:
+            # image with product assigned to cant be a placeholder
+            raise
         super().save(force_insert, force_update, using, update_fields)
         self.create_thumbnail()
 
@@ -128,6 +136,20 @@ class Image(models.Model):
 
         with open(self.thumbnail_full_path, 'wb') as fd:
             fd.write(suf.file.read())
+
+    @classmethod
+    def get_or_create_from_path(cls, path, title=None):
+        if not Image.objects.filter(title=title).exists():
+            image = Image()
+            image.title = title
+            image.product = None
+            image.is_placeholder = True
+            image.full_image = ImageFile(open(path, 'rb'))
+            image.save()
+        else:
+            image = Image.objects.get(title=title)
+
+        return image
 
     def __str__(self):
         return self.title or self.full_image.name
