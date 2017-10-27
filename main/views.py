@@ -24,4 +24,10 @@ def products(request: HttpRequest):
 
 def product(request: HttpRequest, product_id):
     prod = Product.objects.get(pk=product_id)
-    return render(request, 'product.html', {'product': prod})
+
+    placeholder = prod.main_image
+
+    return render(request, 'product.html',
+                  {'product': prod,
+                   'images': prod.image_set.order_by('pk').all(),
+                   'placeholder': placeholder})
